@@ -38,6 +38,7 @@ export default function TacticDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { user, token, isAuthenticated } = useAuth();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
   const [tactic, setTactic] = useState<Tactic | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -46,13 +47,12 @@ export default function TacticDetailPage() {
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [userRating, setUserRating] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function fetchTactic() {
       try {
-        const res = await fetch(`http://localhost:5000/api/tactics/${id}`);
+        const res = await fetch(`${API_URL}/api/tactics/${id}`);
         if (!res.ok) {
           setNotFound(true);
           return;
@@ -67,12 +67,12 @@ export default function TacticDetailPage() {
       }
     }
     if (id) fetchTactic();
-  }, [id]);
+  }, [id, API_URL]);
 
   useEffect(() => {
     async function fetchComments() {
       try {
-        const res = await fetch(`http://localhost:5000/api/comments/${id}`);
+        const res = await fetch(`${API_URL}/api/comments/${id}`);
         if (res.ok) {
           const data = await res.json();
           setComments(data);
@@ -82,7 +82,7 @@ export default function TacticDetailPage() {
       }
     }
     if (id) fetchComments();
-  }, [id]);
+  }, [id, API_URL]);
 
   const handleRate = async (rating: number) => {
     if (!isAuthenticated) {
@@ -91,7 +91,7 @@ export default function TacticDetailPage() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/ratings/${id}`, {
+      const res = await fetch(`${API_URL}/api/ratings/${id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -102,7 +102,6 @@ export default function TacticDetailPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setUserRating(rating);
         setTactic(prev => prev ? {
           ...prev,
           ratings: {
@@ -120,7 +119,7 @@ export default function TacticDetailPage() {
     if (!tactic?.fileUrl) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/tactics/${id}`, {
+      const res = await fetch(`${API_URL}/api/tactics/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -135,7 +134,7 @@ export default function TacticDetailPage() {
       console.error("Error updating download count:", error);
     }
 
-    window.open(`http://localhost:5000${tactic.fileUrl}`, "_blank");
+    window.open(`${API_URL}${tactic.fileUrl}`, "_blank");
   };
 
   const handleAddComment = async (e: React.FormEvent) => {
@@ -150,7 +149,7 @@ export default function TacticDetailPage() {
     setError("");
 
     try {
-      const res = await fetch(`http://localhost:5000/api/comments/${id}`, {
+      const res = await fetch(`${API_URL}/api/comments/${id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -175,7 +174,7 @@ export default function TacticDetailPage() {
 
   const handleDeleteComment = async (commentId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/comments/${commentId}`, {
+      const res = await fetch(`${API_URL}/api/comments/${commentId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`
@@ -201,7 +200,7 @@ export default function TacticDetailPage() {
     formData.append("image", file);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/upload/image/${id}`, {
+      const res = await fetch(`${API_URL}/api/upload/image/${id}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`
@@ -224,7 +223,7 @@ export default function TacticDetailPage() {
 
   const handleDeleteImage = async (imageUrl: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/upload/image/${id}`, {
+      const res = await fetch(`${API_URL}/api/upload/image/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -305,7 +304,6 @@ export default function TacticDetailPage() {
       <Navbar />
       <main className="min-h-screen bg-slate-950 text-white">
         <div className="mx-auto max-w-4xl px-6 py-10">
-          {/* Back button */}
           <button
             onClick={() => router.push("/tactics")}
             className="mb-8 flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition"
@@ -313,7 +311,6 @@ export default function TacticDetailPage() {
             ← Back to Tactics
           </button>
 
-          {/* Tactic Header */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8">
             <div className="flex flex-wrap items-center gap-3 mb-6">
               <span className="rounded-full bg-emerald-400/10 px-4 py-1.5 text-sm font-bold text-emerald-400">
@@ -355,7 +352,6 @@ export default function TacticDetailPage() {
             </p>
           </div>
 
-          {/* Images Section */}
           <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Tactic Screenshots</h2>
@@ -378,7 +374,7 @@ export default function TacticDetailPage() {
                 {tactic.images.map((imageUrl, index) => (
                   <div key={index} className="relative group">
                     <img
-                      src={`http://localhost:5000${imageUrl}`}
+                      src={`${API_URL}${imageUrl}`}
                       alt={`Tactic screenshot ${index + 1}`}
                       className="w-full h-48 object-cover rounded-lg border border-slate-700"
                     />
@@ -400,7 +396,6 @@ export default function TacticDetailPage() {
             )}
           </div>
 
-          {/* Download button */}
           {tactic.fileUrl && (
             <div className="mt-6 rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-6">
               <div className="flex items-center justify-between flex-wrap gap-4">
@@ -423,7 +418,6 @@ export default function TacticDetailPage() {
             </div>
           )}
 
-          {/* Comments Section */}
           <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-bold mb-4">💬 Comments</h2>
             
@@ -485,7 +479,6 @@ export default function TacticDetailPage() {
             )}
           </div>
 
-          {/* CTA section */}
           <div className="mt-6 rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-8 text-center">
             <h2 className="text-2xl font-bold">Want to use this tactic?</h2>
             <p className="mt-2 text-slate-400">Create a free account to save tactics and access premium setups.</p>

@@ -8,6 +8,7 @@ import Navbar from "../components/Navbar";
 export default function AddTacticPage() {
   const router = useRouter();
   const { token, isAuthenticated } = useAuth();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
   const [formData, setFormData] = useState({
     name: "",
     formation: "4-3-3",
@@ -23,93 +24,28 @@ export default function AddTacticPage() {
 
   // All possible formations
   const formations = [
-    // Classic formations
-    "4-4-2",
-    "4-4-2 Diamond",
-    "4-4-2 Wide",
-    "4-3-3",
-    "4-3-3 Attacking",
-    "4-3-3 Defensive",
-    "4-2-3-1",
-    "4-2-3-1 Wide",
-    "4-1-2-1-2",
-    "4-1-2-1-2 Wide",
-    "4-1-3-2",
-    "4-1-4-1",
-    "4-2-2-2",
-    "4-2-4",
-    "4-3-1-2",
-    "4-3-2-1",
-    
-    // 5 at the back
-    "5-3-2",
-    "5-3-2 WB",
-    "5-4-1",
-    "5-4-1 Diamond",
-    "5-2-1-2",
-    "5-2-2-1",
-    "5-2-3",
-    
-    // 3 at the back
-    "3-4-3",
-    "3-4-1-2",
-    "3-4-2-1",
-    "3-5-2",
-    "3-5-1-1",
-    "3-1-4-2",
-    "3-2-3-2",
-    "3-3-1-3",
-    "3-3-2-2",
-    "3-3-3-1",
-    
-    // 2 at the back
-    "2-3-5",
-    "2-4-4",
-    "2-5-3",
-    
-    // Formations with 1 at the back
-    "1-4-5",
-    "1-5-4",
-    
-    // Modern/variation formations
-    "4-5-1",
-    "4-5-1 Flat",
-    "4-6-0",
-    "3-6-1",
-    "4-0-6",
-    "4-1-2-3",
-    "4-3-2-1 Christmas Tree",
-    "4-2-3-1 Narrow",
-    
-    // Uncommon formations
-    "4-1-2-2-1",
-    "4-2-1-2-1",
-    "4-2-1-3",
-    "4-2-2-1-1",
-    "3-4-0-3",
-    "3-4-2-1",
-    "3-5-1-1",
-    "3-5-2 WB",
-    "4-1-2-3 Wide",
-    "4-2-3-0",
-    "4-2-4 Narrow",
-    "4-2-4 Wide",
-    "4-3-2-1 Wide",
-    "4-3-3 Wide",
-    "4-3-3 Narrow",
-    "4-4-1-1",
-    "4-4-2 Narrow",
-    "4-5-1 Attacking",
-    "5-2-3 Wide",
-    "5-3-2 Attacking",
-    "5-4-1 Wide",
-    
-    // Historical formations
-    "2-3-5 Pyramid",
-    "3-2-2-3 Metodo",
-    "4-3-3 Total Football",
-    
-    // Custom
+    "4-4-2", "4-4-2 Diamond", "4-4-2 Wide",
+    "4-3-3", "4-3-3 Attacking", "4-3-3 Defensive",
+    "4-2-3-1", "4-2-3-1 Wide", "4-1-2-1-2",
+    "4-1-2-1-2 Wide", "4-1-3-2", "4-1-4-1",
+    "4-2-2-2", "4-2-4", "4-3-1-2", "4-3-2-1",
+    "5-3-2", "5-3-2 WB", "5-4-1", "5-4-1 Diamond",
+    "5-2-1-2", "5-2-2-1", "5-2-3",
+    "3-4-3", "3-4-1-2", "3-4-2-1", "3-5-2",
+    "3-5-1-1", "3-1-4-2", "3-2-3-2", "3-3-1-3",
+    "3-3-2-2", "3-3-3-1",
+    "2-3-5", "2-4-4", "2-5-3",
+    "1-4-5", "1-5-4",
+    "4-5-1", "4-5-1 Flat", "4-6-0", "3-6-1",
+    "4-0-6", "4-1-2-3", "4-3-2-1 Christmas Tree",
+    "4-2-3-1 Narrow", "4-1-2-2-1", "4-2-1-2-1",
+    "4-2-1-3", "4-2-2-1-1", "3-4-0-3", "3-4-2-1",
+    "3-5-1-1", "3-5-2 WB", "4-1-2-3 Wide", "4-2-3-0",
+    "4-2-4 Narrow", "4-2-4 Wide", "4-3-2-1 Wide",
+    "4-3-3 Wide", "4-3-3 Narrow", "4-4-1-1",
+    "4-4-2 Narrow", "4-5-1 Attacking", "5-2-3 Wide",
+    "5-3-2 Attacking", "5-4-1 Wide",
+    "2-3-5 Pyramid", "3-2-2-3 Metodo", "4-3-3 Total Football",
     "Custom"
   ];
 
@@ -119,15 +55,12 @@ export default function AddTacticPage() {
     return null;
   }
 
-  // Auto-populate tactic name from file
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0] || null;
     setFile(selectedFile);
     
     if (selectedFile) {
-      // Get filename without extension
       const fileName = selectedFile.name.replace(/\.[^/.]+$/, "");
-      // Auto-fill the tactic name
       setFormData(prev => ({
         ...prev,
         name: fileName
@@ -142,13 +75,11 @@ export default function AddTacticPage() {
     setSuccess("");
 
     try {
-      // Determine the formation value
       let formationValue = formData.formation;
       if (formData.formation === "Custom" && formData.customFormation) {
         formationValue = formData.customFormation;
       }
 
-      // Create tactic data
       const tacticData = {
         name: formData.name,
         formation: formationValue,
@@ -157,8 +88,7 @@ export default function AddTacticPage() {
         author: formData.author || "Anonymous"
       };
 
-      // Create the tactic
-      const res = await fetch("http://localhost:5000/api/tactics", {
+      const res = await fetch(`${API_URL}/api/tactics`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -174,12 +104,11 @@ export default function AddTacticPage() {
 
       const tactic = await res.json();
 
-      // Upload file if exists
       if (file) {
         const formData = new FormData();
         formData.append("tacticFile", file);
 
-        const uploadRes = await fetch(`http://localhost:5000/api/upload/tactic-file/${tactic._id}`, {
+        const uploadRes = await fetch(`${API_URL}/api/upload/tactic-file/${tactic._id}`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`
@@ -231,20 +160,19 @@ export default function AddTacticPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* File Upload - First */}
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-2">
-                Tactic File (.fmf) *
+                Tactic File (.fmf or .fmnf) *
               </label>
               <input
                 type="file"
-                accept=".fmf"
+                accept=".fmf,.fmnf"
                 onChange={handleFileChange}
                 className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-emerald-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-400 file:text-slate-950 hover:file:bg-emerald-300"
                 required
               />
               <p className="text-xs text-slate-500 mt-1">
-                Upload your Football Manager tactic file (.fmf format)
+                Upload your Football Manager tactic file (.fmf or .fmnf format)
               </p>
               {file && (
                 <p className="text-xs text-emerald-400 mt-1">
@@ -253,7 +181,6 @@ export default function AddTacticPage() {
               )}
             </div>
 
-            {/* Tactic Name - Auto-filled from file, but can be edited */}
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-2">
                 Tactic Name *
@@ -286,7 +213,6 @@ export default function AddTacticPage() {
               </select>
             </div>
 
-            {/* Custom formation input */}
             {formData.formation === "Custom" && (
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">

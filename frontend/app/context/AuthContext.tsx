@@ -45,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log("📝 Login attempt:", { email });
       const res = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,14 +62,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("user", JSON.stringify(data.user));
       setToken(data.token);
       setUser(data.user);
+      console.log("✅ Login successful");
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("❌ Login error:", error);
       throw error;
     }
   };
 
   const register = async (name: string, email: string, password: string) => {
     try {
+      console.log("📝 Register attempt:", { name, email });
       const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,8 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("user", JSON.stringify(data.user));
       setToken(data.token);
       setUser(data.user);
+      console.log("✅ Registration successful");
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error("❌ Registration error:", error);
       throw error;
     }
   };
@@ -96,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("user");
     setToken(null);
     setUser(null);
+    console.log("✅ Logged out");
   };
 
   return (

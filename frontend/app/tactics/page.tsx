@@ -22,7 +22,6 @@ type Tactic = {
     average: number;
     count: number;
   };
-  favoritedBy?: string[];
 };
 
 export default function TacticsPage() {
@@ -34,6 +33,7 @@ export default function TacticsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [sortBy, setSortBy] = useState("newest");
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     fetchTactics();
@@ -42,19 +42,15 @@ export default function TacticsPage() {
   const fetchTactics = async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/tactics?page=${currentPage}&limit=10&sort=${sortBy}`
-      );
+      const res = await fetch(`${API_URL}/api/tactics?page=${currentPage}&limit=10&sort=${sortBy}`);
       const data = await res.json();
       
-      // Handle both paginated and non-paginated responses
       if (data.tactics) {
         const tacticsWithFiles = data.tactics.filter((t: Tactic) => t.fileUrl);
         setTactics(tacticsWithFiles);
         setTotalPages(data.pagination?.totalPages || 1);
         setTotalItems(data.pagination?.totalItems || tacticsWithFiles.length);
       } else {
-        // Fallback for non-paginated response
         const tacticsWithFiles = data.filter((t: Tactic) => t.fileUrl);
         setTactics(tacticsWithFiles);
         setTotalPages(Math.ceil(tacticsWithFiles.length / 10));
@@ -67,7 +63,6 @@ export default function TacticsPage() {
     }
   };
 
-  // Get unique formations for filter
   const formations = ["All", ...new Set(tactics.map((t) => t.formation))];
 
   const filteredTactics = tactics.filter((tactic) => {
@@ -100,7 +95,6 @@ export default function TacticsPage() {
       <Navbar />
       <main className="min-h-screen bg-slate-950 text-white">
         <div className="mx-auto max-w-5xl px-4 py-6">
-          {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-bold">Football Manager 2026 Tactics</h1>
@@ -127,7 +121,6 @@ export default function TacticsPage() {
             </div>
           </div>
 
-          {/* Search and Filter Bar */}
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <input
               type="text"
@@ -153,7 +146,6 @@ export default function TacticsPage() {
             </div>
           </div>
 
-          {/* Table Header */}
           <div className="hidden md:grid grid-cols-12 gap-3 px-4 py-2 text-xs font-semibold text-slate-500 border-b border-slate-800">
             <div className="col-span-4">Tactic</div>
             <div className="col-span-2 text-center">Formation</div>
@@ -164,7 +156,6 @@ export default function TacticsPage() {
             <div className="col-span-1 text-right">Added</div>
           </div>
 
-          {/* Loading State */}
           {loading ? (
             <div className="space-y-2 mt-4">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -200,12 +191,10 @@ export default function TacticsPage() {
               )}
             </div>
           ) : (
-            /* Tactic List */
             <div className="mt-2 space-y-1">
               {filteredTactics.map((tactic) => (
                 <div key={tactic._id} className="group">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 px-4 py-3 rounded-lg bg-slate-900/50 hover:bg-slate-800 transition border border-transparent hover:border-slate-700">
-                    {/* Tactic Name */}
                     <Link href={`/tactics/${tactic._id}`} className="col-span-4 block">
                       <div className="font-medium text-white group-hover:text-emerald-400 transition">
                         {tactic.name}
@@ -220,14 +209,12 @@ export default function TacticsPage() {
                       )}
                     </Link>
 
-                    {/* Formation */}
                     <div className="col-span-2 flex items-center justify-start md:justify-center">
                       <span className="text-xs font-medium text-slate-300 bg-slate-800 px-2 py-1 rounded">
                         {tactic.formation}
                       </span>
                     </div>
 
-                    {/* Rating */}
                     <div className="col-span-2 flex items-center justify-start md:justify-center">
                       <StarRating
                         rating={tactic.ratings?.average || 0}
@@ -237,14 +224,12 @@ export default function TacticsPage() {
                       />
                     </div>
 
-                    {/* Downloads */}
                     <div className="col-span-1 flex items-center justify-start md:justify-center">
                       <span className="text-sm text-slate-400">
                         📥 {tactic.downloads || 0}
                       </span>
                     </div>
 
-                    {/* Premium */}
                     <div className="col-span-1 flex items-center justify-start md:justify-center">
                       {tactic.isPremium ? (
                         <span className="text-xs font-bold text-yellow-400">⭐</span>
@@ -253,12 +238,10 @@ export default function TacticsPage() {
                       )}
                     </div>
 
-                    {/* Favorite Button */}
                     <div className="col-span-1 flex items-center justify-start md:justify-center">
                       <FavoriteButton tacticId={tactic._id} />
                     </div>
 
-                    {/* Date */}
                     <div className="col-span-1 flex items-center justify-start md:justify-end text-xs text-slate-500">
                       {formatDate(tactic.createdAt)}
                     </div>
@@ -268,7 +251,6 @@ export default function TacticsPage() {
             </div>
           )}
 
-          {/* Pagination */}
           {!loading && filteredTactics.length > 0 && (
             <Pagination
               currentPage={currentPage}
@@ -277,7 +259,6 @@ export default function TacticsPage() {
             />
           )}
 
-          {/* Footer Stats */}
           {filteredTactics.length > 0 && (
             <div className="mt-4 flex items-center justify-between text-xs text-slate-600 border-t border-slate-800 pt-4">
               <span>{filteredTactics.length} tactics</span>
