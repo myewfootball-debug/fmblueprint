@@ -13,7 +13,6 @@ export default function Navbar() {
     router.push("/");
   };
 
-  // Show loading state
   if (loading) {
     return (
       <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm">
@@ -49,9 +48,8 @@ export default function Navbar() {
           
           {isAuthenticated ? (
             <>
-              <span className="text-sm text-slate-300 flex items-center gap-2">
-                <span className="text-emerald-400">●</span>
-                {user?.name}
+              <span className="text-sm text-slate-300">
+                👋 {user?.name}
               </span>
               <button
                 onClick={handleLogout}

@@ -24,20 +24,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-  // Load user from localStorage on page load
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
     
     if (storedToken && storedUser) {
       try {
-        const parsedUser = JSON.parse(storedUser);
         setToken(storedToken);
-        setUser(parsedUser);
-        console.log("✅ User restored from localStorage:", parsedUser.email);
+        setUser(JSON.parse(storedUser));
       } catch (error) {
-        console.error("❌ Error restoring user:", error);
+        console.error("Error restoring user:", error);
         localStorage.removeItem("token");
         localStorage.removeItem("user");
       }
@@ -47,8 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log("📝 Login attempt:", { email });
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -60,24 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await res.json();
-      
-      // Save to localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      
       setToken(data.token);
       setUser(data.user);
-      console.log("✅ Login successful for:", data.user.email);
     } catch (error) {
-      console.error("❌ Login error:", error);
+      console.error("Login error:", error);
       throw error;
     }
   };
 
   const register = async (name: string, email: string, password: string) => {
     try {
-      console.log("📝 Register attempt:", { name, email });
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
@@ -89,16 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await res.json();
-      
-      // Save to localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      
       setToken(data.token);
       setUser(data.user);
-      console.log("✅ Registration successful for:", data.user.email);
     } catch (error) {
-      console.error("❌ Registration error:", error);
+      console.error("Registration error:", error);
       throw error;
     }
   };
@@ -108,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("user");
     setToken(null);
     setUser(null);
-    console.log("✅ Logged out");
   };
 
   return (
