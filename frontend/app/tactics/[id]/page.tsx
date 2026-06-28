@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../components/Navbar";
 import { useAuth } from "../../context/AuthContext";
+import StarRating from "../../components/StarRating";
+import FavoriteButton from "../../components/FavoriteButton";
 
 type Tactic = {
   _id: string;
@@ -17,6 +19,10 @@ type Tactic = {
   downloads?: number;
   author?: string;
   images?: string[];
+  ratings?: {
+    average: number;
+    count: number;
+  };
 };
 
 type Comment = {
@@ -40,6 +46,7 @@ export default function TacticDetailPage() {
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [userRating, setUserRating] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -76,6 +83,38 @@ export default function TacticDetailPage() {
     }
     if (id) fetchComments();
   }, [id]);
+
+  const handleRate = async (rating: number) => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/ratings/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ rating })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUserRating(rating);
+        setTactic(prev => prev ? {
+          ...prev,
+          ratings: {
+            average: data.average,
+            count: data.count
+          }
+        } : null);
+      }
+    } catch (error) {
+      console.error("Error rating tactic:", error);
+    }
+  };
 
   const handleDownload = async () => {
     if (!tactic?.fileUrl) return;
@@ -297,7 +336,20 @@ export default function TacticDetailPage() {
               )}
             </div>
 
-            <h1 className="text-4xl font-bold md:text-5xl">{tactic.name}</h1>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-4xl font-bold md:text-5xl">{tactic.name}</h1>
+                <div className="mt-4 flex items-center gap-4">
+                  <StarRating
+                    rating={tactic.ratings?.average || 0}
+                    onRate={handleRate}
+                    count={tactic.ratings?.count || 0}
+                  />
+                  <FavoriteButton tacticId={tactic._id} />
+                </div>
+              </div>
+            </div>
+
             <p className="mt-6 text-lg leading-relaxed text-slate-300">
               {tactic.description}
             </p>

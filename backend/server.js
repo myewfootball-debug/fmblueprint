@@ -25,11 +25,17 @@ app.use("/api/uploads", express.static(path.join(__dirname, "uploads")));
 const tacticRoutes = require("./routes/tactics");
 const authRoutes = require("./routes/auth");
 const uploadRoutes = require("./routes/upload");
+const commentRoutes = require("./routes/comments");
+const ratingRoutes = require("./routes/ratings");
+const favoriteRoutes = require("./routes/favorites");
 
 // Use routes
 app.use("/api/tactics", tacticRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/comments", commentRoutes);
+app.use("/api/ratings", ratingRoutes);
+app.use("/api/favorites", favoriteRoutes);
 
 // Test route
 app.get("/", (req, res) => {
@@ -47,7 +53,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || "Internal server error" });
 });
 
-// MongoDB connection - FIXED VERSION
+// MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => {

@@ -1,0 +1,61 @@
+"use client";
+
+import { useState } from "react";
+
+type StarRatingProps = {
+  rating: number;
+  onRate?: (rating: number) => void;
+  readonly?: boolean;
+  size?: "sm" | "md" | "lg";
+  count?: number;
+};
+
+export default function StarRating({ 
+  rating, 
+  onRate, 
+  readonly = false, 
+  size = "md",
+  count 
+}: StarRatingProps) {
+  const [hoverRating, setHoverRating] = useState(0);
+
+  const sizeClasses = {
+    sm: "text-lg",
+    md: "text-2xl",
+    lg: "text-3xl"
+  };
+
+  const handleClick = (star: number) => {
+    if (!readonly && onRate) {
+      onRate(star);
+    }
+  };
+
+  const displayRating = hoverRating || rating;
+
+  return (
+    <div className="flex items-center gap-1">
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            onClick={() => handleClick(star)}
+            onMouseEnter={() => !readonly && setHoverRating(star)}
+            onMouseLeave={() => !readonly && setHoverRating(0)}
+            disabled={readonly}
+            className={`transition ${
+              star <= displayRating 
+                ? "text-yellow-400" 
+                : "text-slate-600"
+            } ${sizeClasses[size]} ${readonly ? "cursor-default" : "cursor-pointer hover:scale-110"}`}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+      {count !== undefined && (
+        <span className="text-sm text-slate-400 ml-1">({count})</span>
+      )}
+    </div>
+  );
+}

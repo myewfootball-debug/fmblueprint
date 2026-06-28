@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
+import StarRating from "../components/StarRating";
+import FavoriteButton from "../components/FavoriteButton";
+import Pagination from "../components/Pagination";
 
 type Tactic = {
   _id: string;
@@ -15,6 +18,11 @@ type Tactic = {
   createdAt?: string;
   fileUrl?: string;
   filename?: string;
+  ratings?: {
+    average: number;
+    count: number;
+  };
+  favoritedBy?: string[];
 };
 
 export default function TacticsPage() {
@@ -22,23 +30,42 @@ export default function TacticsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [formation, setFormation] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [sortBy, setSortBy] = useState("newest");
 
   useEffect(() => {
-    async function fetchTactics() {
-      try {
-        const res = await fetch("http://localhost:5000/api/tactics");
-        const data = await res.json();
-        // Only show tactics that have a file uploaded
-        const tacticsWithFiles = data.filter((tactic: Tactic) => tactic.fileUrl);
-        setTactics(tacticsWithFiles);
-      } catch (error) {
-        console.error("Failed to fetch tactics:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchTactics();
-  }, []);
+  }, [currentPage, sortBy]);
+
+  const fetchTactics = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/tactics?page=${currentPage}&limit=10&sort=${sortBy}`
+      );
+      const data = await res.json();
+      
+      // Handle both paginated and non-paginated responses
+      if (data.tactics) {
+        const tacticsWithFiles = data.tactics.filter((t: Tactic) => t.fileUrl);
+        setTactics(tacticsWithFiles);
+        setTotalPages(data.pagination?.totalPages || 1);
+        setTotalItems(data.pagination?.totalItems || tacticsWithFiles.length);
+      } else {
+        // Fallback for non-paginated response
+        const tacticsWithFiles = data.filter((t: Tactic) => t.fileUrl);
+        setTactics(tacticsWithFiles);
+        setTotalPages(Math.ceil(tacticsWithFiles.length / 10));
+        setTotalItems(tacticsWithFiles.length);
+      }
+    } catch (error) {
+      console.error("Failed to fetch tactics:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Get unique formations for filter
   const formations = ["All", ...new Set(tactics.map((t) => t.formation))];
@@ -52,7 +79,6 @@ export default function TacticsPage() {
     return matchesSearch && matchesFormation;
   });
 
-  // Format date
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Just now";
     const date = new Date(dateString);
@@ -75,19 +101,30 @@ export default function TacticsPage() {
       <main className="min-h-screen bg-slate-950 text-white">
         <div className="mx-auto max-w-5xl px-4 py-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-bold">Football Manager 2026 Tactics</h1>
               <p className="text-sm text-slate-500 mt-1">
-                {tactics.length} tactics available for download
+                {totalItems} tactics available for download
               </p>
             </div>
-            <Link
-              href="/add-tactic"
-              className="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300 transition"
-            >
-              + Add Tactic
-            </Link>
+            <div className="flex items-center gap-3">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400"
+              >
+                <option value="newest">Newest</option>
+                <option value="popular">Most Downloaded</option>
+                <option value="top-rated">Top Rated</option>
+              </select>
+              <Link
+                href="/add-tactic"
+                className="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300 transition"
+              >
+                + Add Tactic
+              </Link>
+            </div>
           </div>
 
           {/* Search and Filter Bar */}
@@ -118,11 +155,13 @@ export default function TacticsPage() {
 
           {/* Table Header */}
           <div className="hidden md:grid grid-cols-12 gap-3 px-4 py-2 text-xs font-semibold text-slate-500 border-b border-slate-800">
-            <div className="col-span-5">Tactic</div>
+            <div className="col-span-4">Tactic</div>
             <div className="col-span-2 text-center">Formation</div>
-            <div className="col-span-2 text-center">Downloads</div>
+            <div className="col-span-2 text-center">Rating</div>
+            <div className="col-span-1 text-center">Downloads</div>
             <div className="col-span-1 text-center">Premium</div>
-            <div className="col-span-2 text-right">Added</div>
+            <div className="col-span-1 text-center">❤️</div>
+            <div className="col-span-1 text-right">Added</div>
           </div>
 
           {/* Loading State */}
@@ -164,14 +203,10 @@ export default function TacticsPage() {
             /* Tactic List */
             <div className="mt-2 space-y-1">
               {filteredTactics.map((tactic) => (
-                <Link
-                  key={tactic._id}
-                  href={`/tactics/${tactic._id}`}
-                  className="block group"
-                >
+                <div key={tactic._id} className="group">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 px-4 py-3 rounded-lg bg-slate-900/50 hover:bg-slate-800 transition border border-transparent hover:border-slate-700">
                     {/* Tactic Name */}
-                    <div className="col-span-5">
+                    <Link href={`/tactics/${tactic._id}`} className="col-span-4 block">
                       <div className="font-medium text-white group-hover:text-emerald-400 transition">
                         {tactic.name}
                       </div>
@@ -183,7 +218,7 @@ export default function TacticsPage() {
                           by {tactic.author}
                         </div>
                       )}
-                    </div>
+                    </Link>
 
                     {/* Formation */}
                     <div className="col-span-2 flex items-center justify-start md:justify-center">
@@ -192,8 +227,18 @@ export default function TacticsPage() {
                       </span>
                     </div>
 
-                    {/* Downloads */}
+                    {/* Rating */}
                     <div className="col-span-2 flex items-center justify-start md:justify-center">
+                      <StarRating
+                        rating={tactic.ratings?.average || 0}
+                        readonly
+                        size="sm"
+                        count={tactic.ratings?.count || 0}
+                      />
+                    </div>
+
+                    {/* Downloads */}
+                    <div className="col-span-1 flex items-center justify-start md:justify-center">
                       <span className="text-sm text-slate-400">
                         📥 {tactic.downloads || 0}
                       </span>
@@ -208,21 +253,35 @@ export default function TacticsPage() {
                       )}
                     </div>
 
+                    {/* Favorite Button */}
+                    <div className="col-span-1 flex items-center justify-start md:justify-center">
+                      <FavoriteButton tacticId={tactic._id} />
+                    </div>
+
                     {/* Date */}
-                    <div className="col-span-2 flex items-center justify-start md:justify-end text-xs text-slate-500">
+                    <div className="col-span-1 flex items-center justify-start md:justify-end text-xs text-slate-500">
                       {formatDate(tactic.createdAt)}
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && filteredTactics.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           )}
 
           {/* Footer Stats */}
           {filteredTactics.length > 0 && (
             <div className="mt-4 flex items-center justify-between text-xs text-slate-600 border-t border-slate-800 pt-4">
               <span>{filteredTactics.length} tactics</span>
-              <span>Showing {filteredTactics.length} of {tactics.length}</span>
+              <span>Showing {filteredTactics.length} of {totalItems}</span>
             </div>
           )}
         </div>

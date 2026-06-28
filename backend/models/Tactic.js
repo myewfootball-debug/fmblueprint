@@ -10,14 +10,15 @@ const tacticSchema = new mongoose.Schema({
   fileUrl: { type: String },
   downloads: { type: Number, default: 0 },
   author: { type: String },
-  // New fields for images
-  images: [{ type: String }], // Array of image URLs
-  comments: [{
-    user: { type: String, required: true },
-    userId: { type: String, required: true },
-    text: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now }
-  }]
+  images: [{ type: String }],
+  // Ratings system
+  ratings: {
+    total: { type: Number, default: 0 },
+    count: { type: Number, default: 0 },
+    average: { type: Number, default: 0 }
+  },
+  // Favorites - stored as array of user IDs
+  favoritedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
 });
 
 module.exports = mongoose.model("Tactic", tacticSchema);
