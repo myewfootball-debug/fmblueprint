@@ -40,7 +40,8 @@ router.post("/:tacticId", authenticate, async (req, res) => {
       return res.status(404).json({ error: "Tactic not found" });
     }
 
-    const user = await require("../models/User").findById(req.userId);
+    const User = require("../models/User");
+    const user = await User.findById(req.userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -67,7 +68,6 @@ router.delete("/:commentId", authenticate, async (req, res) => {
       return res.status(404).json({ error: "Comment not found" });
     }
 
-    // Check if user owns the comment
     if (comment.userId.toString() !== req.userId) {
       return res.status(403).json({ error: "You can only delete your own comments" });
     }
