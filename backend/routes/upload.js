@@ -15,7 +15,7 @@ if (!fs.existsSync(imagesDir)) {
   fs.mkdirSync(imagesDir, { recursive: true });
 }
 
-// Configure multer for tactic files (.fmf)
+// Configure multer for tactic files (.fmf or .fmnf)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     if (file.fieldname === "image") {
@@ -29,7 +29,9 @@ const storage = multer.diskStorage({
     if (file.fieldname === "image") {
       cb(null, "image-" + uniqueSuffix + path.extname(file.originalname));
     } else {
-      cb(null, "tactic-" + uniqueSuffix + ".fmf");
+      // Keep the original extension (.fmf or .fmnf)
+      const ext = path.extname(file.originalname);
+      cb(null, "tactic-" + uniqueSuffix + ext);
     }
   }
 });
@@ -43,11 +45,12 @@ const fileFilter = (req, file, cb) => {
       cb(new Error("Only image files are allowed"), false);
     }
   } else {
-    if (file.mimetype === "application/octet-stream" || 
-        file.originalname.endsWith(".fmf")) {
+    // Accept both .fmf and .fmnf files
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ext === ".fmf" || ext === ".fmnf") {
       cb(null, true);
     } else {
-      cb(new Error("Only .fmf files are allowed"), false);
+      cb(new Error("Only .fmf or .fmnf files are allowed"), false);
     }
   }
 };
@@ -127,7 +130,6 @@ router.delete("/image/:tacticId", async (req, res) => {
     tactic.images = tactic.images.filter(img => img !== imageUrl);
     await tactic.save();
 
-    // Delete the file from disk
     const filename = imageUrl.split("/").pop();
     const filePath = path.join(imagesDir, filename);
     if (fs.existsSync(filePath)) {
