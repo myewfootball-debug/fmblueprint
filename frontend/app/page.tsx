@@ -1,14 +1,8 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
-export default function HomePage() {
-  const router = useRouter();
-  
-  useEffect(() => {
-    router.push("/tactics");
-  }, [router]);
-
-  return null;
+export default function Home() {
+  return (
+    <div style={{ padding: "50px", textAlign: "center" }}>
+      <h1>FM Blueprint</h1>
+      <p>Welcome to Football Manager Tactics</p>
+    </div>
+  )
 }
