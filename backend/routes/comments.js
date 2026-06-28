@@ -1,0 +1,83 @@
+const express = require("express");
+const router = express.Router();
+const Comment = require("../models/Comment");
+const Tactic = require("../models/Tactic");
+const User = require("../models/User");
+const jwt = require("jsonwebtoken");
+
+// Middleware to verify JWT token
+const authenticate = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret123");
+    req.userId = decoded.userId;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: "Invalid token" });
+  }
+};
+
+// Get comments for a tactic
+router.get("/:tacticId", async (req, res) => {
+  try {
+    const comments = await Comment.find({ tacticId: req.params.tacticId })
+      .sort({ createdAt: -1 });
+    res.json(comments);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add a comment
+router.post("/:tacticId", authenticate, async (req, res) => {
+  try {
+    const { text } = req.body;
+    const tactic = await Tactic.findById(req.params.tacticId);
+    if (!tactic) {
+      return res.status(404).json({ error: "Tactic not found" });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const comment = new Comment({
+      tacticId: req.params.tacticId,
+      userId: req.userId,
+      userName: user.name,
+      text: text
+    });
+
+    await comment.save();
+    res.status(201).json(comment);
+  } catch (error) {
+    console.error("Comment error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a comment
+router.delete("/:commentId", authenticate, async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+
+    if (comment.userId.toString() !== req.userId) {
+      return res.status(403).json({ error: "You can only delete your own comments" });
+    }
+
+    await comment.deleteOne();
+    res.json({ message: "Comment deleted" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+module.exports = router;
